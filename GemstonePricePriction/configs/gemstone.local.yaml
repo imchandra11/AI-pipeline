@@ -1,0 +1,11 @@
+# Local configuration overrides for Gemstone Price Prediction
+# This file can be used to override settings without modifying gemstone.yaml
+# Example overrides:
+# trainer:
+#   max_epochs: 10
+#   precision: 32
+# data:
+#   init_args:
+#     batch_size: 128
+#     num_workers: 4
+
