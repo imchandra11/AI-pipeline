@@ -5,10 +5,14 @@ This module provides a callback to export trained models to ONNX format
 for production deployment.
 """
 
+import logging
 from pathlib import Path
 from typing import Optional
 import torch
 import lightning as L
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 
 class ONNXExportCallback(L.pytorch.callbacks.Callback):
@@ -99,9 +103,15 @@ class ONNXExportCallback(L.pytorch.callbacks.Callback):
                 },
             )
             
-            trainer.logger.info(f"Model exported to ONNX: {onnx_path}")
+            # Log success using Python's logging module
+            success_msg = f"Model exported to ONNX: {onnx_path}"
+            logger.info(success_msg)
+            print(f"✓ {success_msg}")
         
         except Exception as e:
-            trainer.logger.error(f"Failed to export model to ONNX: {e}")
+            # Log error using Python's logging module
+            error_msg = f"Failed to export model to ONNX: {e}"
+            logger.error(error_msg, exc_info=True)
+            print(f"✗ {error_msg}")
             raise
 

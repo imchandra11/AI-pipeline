@@ -41,7 +41,7 @@ class RegressionModel(nn.Module):
         Initialize the regression model.
         
         Args:
-            input_dim: Number of input features
+            input_dim: Number of input features (can be 0 if will be set later)
             hidden_layers: List of hidden layer sizes
             dropout_rates: List of dropout rates (must match hidden_layers length)
             activation: Activation function name
@@ -49,8 +49,9 @@ class RegressionModel(nn.Module):
         """
         super().__init__()
         
-        if input_dim <= 0:
-            raise ValueError(f"input_dim must be positive, got {input_dim}")
+        # Allow input_dim=0 temporarily (will be set later)
+        if input_dim < 0:
+            raise ValueError(f"input_dim must be non-negative, got {input_dim}")
         
         if not hidden_layers:
             raise ValueError("hidden_layers cannot be empty")
@@ -69,14 +70,35 @@ class RegressionModel(nn.Module):
             if not 0 <= rate < 1:
                 raise ValueError(f"dropout_rates[{i}] must be in [0, 1), got {rate}")
         
+        # Store configuration
+        self._input_dim = input_dim
+        self._output_dim = output_dim
+        self._hidden_layers = hidden_layers
+        self._dropout_rates = dropout_rates
+        self._activation = activation
+        
+        # Only build model if input_dim is set
+        if input_dim > 0:
+            self._build_model()
+        else:
+            # Create placeholder - will be built when input_dim is set
+            self.model = None
+            self.input_dim = 0
+            self.output_dim = output_dim
+    
+    def _build_model(self):
+        """Build the model architecture."""
+        if self._input_dim <= 0:
+            return
+        
         # Get activation function
-        activation_fn = self._get_activation(activation)
+        activation_fn = self._get_activation(self._activation)
         
         # Build layers
         layers = []
-        prev_dim = input_dim
+        prev_dim = self._input_dim
         
-        for i, (hidden_dim, dropout_rate) in enumerate(zip(hidden_layers, dropout_rates)):
+        for i, (hidden_dim, dropout_rate) in enumerate(zip(self._hidden_layers, self._dropout_rates)):
             # Linear layer
             layers.append(nn.Linear(prev_dim, hidden_dim))
             
@@ -93,11 +115,26 @@ class RegressionModel(nn.Module):
             prev_dim = hidden_dim
         
         # Output layer
-        layers.append(nn.Linear(prev_dim, output_dim))
+        layers.append(nn.Linear(prev_dim, self._output_dim))
         
         self.model = nn.Sequential(*layers)
-        self.input_dim = input_dim
-        self.output_dim = output_dim
+        self.input_dim = self._input_dim
+    
+    def set_input_dim(self, input_dim: int):
+        """
+        Set input dimension and build the model.
+        
+        Args:
+            input_dim: Number of input features
+        """
+        if input_dim <= 0:
+            raise ValueError(f"input_dim must be positive, got {input_dim}")
+        
+        if self.model is not None:
+            raise RuntimeError("Model already built. Cannot change input_dim.")
+        
+        self._input_dim = input_dim
+        self._build_model()
     
     def _get_activation(self, activation: str) -> nn.Module:
         """
@@ -137,6 +174,8 @@ class RegressionModel(nn.Module):
         Returns:
             Output tensor of shape (batch_size, output_dim)
         """
+        if self.model is None:
+            raise RuntimeError("Model not built. input_dim must be set before forward pass.")
         return self.model(x)
     
     def get_input_dim(self) -> int:

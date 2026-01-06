@@ -33,7 +33,7 @@ trainer:
       name: "GemstonePriceTraining"
       default_hp_metric: false
 
-  max_epochs: &me 1
+  max_epochs: 1
   num_sanity_val_steps: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 1
@@ -70,7 +70,7 @@ lr_scheduler:
   init_args:
     max_lr: 0.001
     pct_start: 0.1
-    total_steps: *me
+    total_steps: 1000
 
 data:
   class_path: Regression.datamodule.DataModuleRGS
