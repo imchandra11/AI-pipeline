@@ -22,25 +22,25 @@ trainer:
         save_on_train_epoch_end: false
     - class_path: Classification.callbacks.ONNXExportCallback
       init_args:
-        output_dir: "models"
+        output_dir: "StressLevelPrediction/models"
         model_name: "stress_level_model"
         input_dim: null  # Will be auto-detected from datamodule
 
   logger:
     class_path: lightning.pytorch.loggers.TensorBoardLogger
     init_args:
-      save_dir: "lightning_logs"
+      save_dir: "StressLevelPrediction/lightning_logs"
       name: "StressLevelTraining"
       default_hp_metric: false
 
-  max_epochs: 50
+  max_epochs: 30
   num_sanity_val_steps: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 10
   accelerator: auto
   devices: auto
   precision: 16-mixed
-  default_root_dir: "lightning_logs/StressLevelTraining"
+  default_root_dir: "StressLevelPrediction/lightning_logs/StressLevelTraining"
 
 model:
   class_path: Classification.modelmodule.ModelModuleCLS
@@ -49,7 +49,7 @@ model:
     weight_decay: 0.0
     lr_scheduler_factor: 0.5
     lr_scheduler_patience: 5
-    save_dir: "models"
+    save_dir: "StressLevelPrediction/models"
     name: "stress_level_model"
     model:
       class_path: Classification.modelfactory.ClassificationModel
@@ -96,7 +96,7 @@ data:
       - Social_Person
     target_col: "Stress_Level"
     save_preprocessor: true
-    preprocessor_path: "models/preprocessor.joblib"
+    preprocessor_path: "StressLevelPrediction/models/preprocessor.joblib"
 
 fit:
   ckpt_path: null   # for resume training

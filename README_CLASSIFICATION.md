@@ -619,3 +619,14 @@ For issues or questions, please check:
 4. Dependencies installation
 5. TensorBoard logs for training insights
 
+```
+# Install dependencies
+pip install fastapi uvicorn jinja2 python-multipart onnxruntime
+
+# Run the server
+python -m StressLevelPrediction.api.main
+
+# Or using uvicorn directly
+uvicorn StressLevelPrediction.api.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn StressLevelPrediction.api.main:app --reload  --port 8000
+```
