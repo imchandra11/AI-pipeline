@@ -1,0 +1,123 @@
+# Image Classification Model Configuration
+# lightning.pytorch==2.1.0
+seed_everything: true
+
+trainer:
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "{epoch}-{val_acc:.2f}.best"
+        monitor: "val_acc"
+        mode: "max"
+        save_top_k: 1
+        verbose: true
+        save_on_train_epoch_end: false
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "{epoch}.last"
+        monitor: "step"
+        mode: "max"
+        save_top_k: 1
+        verbose: true
+        save_on_train_epoch_end: false
+    - class_path: ImageClassification.callbacks.ONNXExportCallback
+      init_args:
+        output_dir: "YourProjectName/models"
+        model_name: "your_model_name"
+        input_shape: [3, 224, 224]  # [channels, height, width]
+
+  logger:
+    class_path: lightning.pytorch.loggers.TensorBoardLogger
+    init_args:
+      save_dir: "YourProjectName/lightning_logs"
+      name: "YourProjectTraining"
+      default_hp_metric: false
+
+  max_epochs: 50
+  num_sanity_val_steps: 2
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 10
+  accelerator: auto
+  devices: auto
+  precision: 16-mixed
+  default_root_dir: "YourProjectName/lightning_logs/YourProjectTraining"
+
+model:
+  class_path: ImageClassification.modelmodule.ModelModuleIMG
+  init_args:
+    lr: 0.001
+    weight_decay: 0.0001
+    lr_scheduler_factor: 0.5
+    lr_scheduler_patience: 5
+    save_dir: "YourProjectName/models"
+    name: "your_model_name"
+    model:
+      class_path: ImageClassification.modelfactory.ImageClassificationModel
+      init_args:
+        input_channels: 3  # 3 for RGB, 1 for grayscale
+        num_classes: 0  # Auto-set from datamodule via CLI linking
+        architecture: "medium"  # "simple", "medium", "deep", or "custom"
+        # Optional: Custom architecture
+        # conv_layers:
+        #   - out_channels: 64
+        #     kernel_size: 3
+        #     pool: true
+        #   - out_channels: 128
+        #     kernel_size: 3
+        #     pool: true
+        hidden_dims: [512, 256]  # FC layer sizes (optional, defaults based on architecture)
+        dropout_rates: [0.5, 0.3]  # Dropout for FC layers (optional)
+        activation: "relu"  # "relu", "tanh", "gelu", "sigmoid", "leaky_relu", "elu"
+        input_size: [224, 224]  # [height, width]
+
+optimizer: 
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.001
+    weight_decay: 0.0001
+
+lr_scheduler:
+  class_path: torch.optim.lr_scheduler.OneCycleLR
+  init_args:
+    max_lr: 0.001
+    pct_start: 0.1
+    total_steps: 1000
+
+data:
+  class_path: ImageClassification.datamodule.DataModuleIMG
+  init_args:
+    # Option 1: Folder-based (recommended)
+    data_dir: "YourProjectName/data/images"
+    
+    # Option 2: CSV-based (uncomment to use)
+    # csv_path: "YourProjectName/data/image_labels.csv"
+    # image_path_col: "image_path"
+    # label_col: "label"
+    
+    image_size: [224, 224]  # [height, width]
+    batch_size: 32
+    num_workers: 4
+    val_split: 0.2
+    random_seed: 42
+    augmentation:
+      enabled: true
+      rotation: 15
+      horizontal_flip: true
+      vertical_flip: false
+      color_jitter: 0.2
+      color_jitter_brightness: 0.2
+      color_jitter_contrast: 0.2
+      color_jitter_saturation: 0.2
+      color_jitter_hue: 0.1
+      # random_crop: 200  # Optional: crop size
+    normalization:
+      mean: [0.485, 0.456, 0.406]  # ImageNet defaults
+      std: [0.229, 0.224, 0.225]
+    save_preprocessor: true
+    preprocessor_path: "YourProjectName/models/label_encoder.joblib"
+
+fit:
+  ckpt_path: null   # for resume training
+
+test:
+  ckpt_path: best   # checkpoint to use for test and predict

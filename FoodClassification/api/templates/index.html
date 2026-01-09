@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    {% if error %}
+    <div class="alert alert-error">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+    
+    {% if prediction %}
+    <div class="prediction-result">
+        <h2>Prediction Result</h2>
+        
+        {% if image_base64 %}
+        <div class="image-preview-container">
+            <img src="data:image/jpeg;base64,{{ image_base64 }}" alt="Uploaded image" class="predicted-image">
+            {% if image_filename %}
+            <p class="image-filename">{{ image_filename }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="result-card">
+            <div class="result-main">
+                <div class="predicted-class">
+                    <span class="class-name">{{ prediction.predicted_class }}</span>
+                    <span class="confidence-badge">{{ "%.1f"|format(prediction.confidence * 100) }}%</span>
+                </div>
+            </div>
+            
+            <div class="top-predictions-section">
+                <h3>Top Predictions</h3>
+                <div class="top-predictions-grid">
+                    {% for pred in prediction.top_predictions %}
+                    <div class="top-pred-item {% if loop.index == 1 %}top-pred-item-first{% endif %}">
+                        <div class="pred-rank">#{{ loop.index }}</div>
+                        <div class="pred-class-name">{{ pred.class_name }}</div>
+                        <div class="pred-confidence-bar">
+                            <div class="confidence-fill" style="width: {{ pred.confidence * 100 }}%"></div>
+                        </div>
+                        <div class="pred-confidence-value">{{ "%.1f"|format(pred.confidence * 100) }}%</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            {% if num_classes > 5 %}
+            <div class="all-probabilities-section">
+                <h3>All {{ num_classes }} Food Classes</h3>
+                <div class="probabilities-container">
+                    {% for class_name, prob in prediction.all_probabilities|dictsort(by='value', reverse=true) %}
+                    <div class="prob-item">
+                        <div class="prob-label">
+                            <span class="class-name-text">{{ class_name }}</span>
+                            <span class="prob-value">{{ "%.2f"|format(prob * 100) }}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" 
+                                 style="width: {{ prob * 100 }}%"
+                                 data-class="{{ class_name }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="upload-container">
+        <h2>Upload Food Image</h2>
+        
+        <form method="POST" action="/predict" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+            <div class="upload-area" id="uploadArea">
+                <input type="file" 
+                       id="fileInput" 
+                       name="image" 
+                       accept="image/*" 
+                       required 
+                       style="display: none;">
+                
+                <div class="upload-placeholder" id="uploadPlaceholder">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p class="upload-text">Drag & drop your food image here</p>
+                    <p class="upload-subtext">or click to browse</p>
+                    <p class="upload-formats">Supported: JPG, PNG, WEBP, BMP (max 10MB)</p>
+                </div>
+                
+                <div class="image-preview" id="imagePreview" style="display: none;">
+                    <img id="previewImage" src="" alt="Preview">
+                    <button type="button" class="remove-image" id="removeImage">×</button>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-primary" id="submitBtn" style="display: none;">
+                <span class="btn-text">Classify Food</span>
+                <span class="btn-loader" style="display: none;">⏳ Processing...</span>
+            </button>
+        </form>
+        
+        {% if class_names and class_names|length > 0 %}
+        <div class="class-info">
+            <p><strong>{{ num_classes }} food classes available:</strong></p>
+            <div class="class-tags">
+                {% for class_name in class_names %}
+                <span class="class-tag">{{ class_name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// File input handling
+const fileInput = document.getElementById('fileInput');
+const uploadArea = document.getElementById('uploadArea');
+const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+const imagePreview = document.getElementById('imagePreview');
+const previewImage = document.getElementById('previewImage');
+const removeImage = document.getElementById('removeImage');
+const submitBtn = document.getElementById('submitBtn');
+const uploadForm = document.getElementById('uploadForm');
+
+// Click to browse
+uploadArea.addEventListener('click', () => {
+    if (!imagePreview.style.display || imagePreview.style.display === 'none') {
+        fileInput.click();
+    }
+});
+
+// File input change
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith('image/')) {
+            fileInput.files = e.dataTransfer.files;
+            handleFile(file);
+        } else {
+            alert('Please drop an image file');
+        }
+    }
+});
+
+// Handle file selection
+function handleFile(file) {
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/bmp'];
+    if (!validTypes.includes(file.type)) {
+        alert('Please select a valid image file (JPG, PNG, WEBP, BMP)');
+        return;
+    }
+    
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File too large. Maximum size is 10MB');
+        return;
+    }
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        uploadPlaceholder.style.display = 'none';
+        imagePreview.style.display = 'block';
+        submitBtn.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Remove image
+removeImage.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.value = '';
+    uploadPlaceholder.style.display = 'block';
+    imagePreview.style.display = 'none';
+    submitBtn.style.display = 'none';
+});
+
+// Form submission loading state
+uploadForm.addEventListener('submit', () => {
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnLoader = submitBtn.querySelector('.btn-loader');
+    submitBtn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline';
+});
+</script>
+{% endblock %}
+

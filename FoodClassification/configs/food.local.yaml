@@ -1,0 +1,10 @@
+# Local configuration overrides
+trainer:
+  max_epochs: 10  # Quick test
+  precision: 32   # Use full precision if mixed precision causes issues
+  devices: 1      # Use single device
+
+data:
+  init_args:
+    batch_size: 4  # Smaller batch for testing
+    num_workers: 0  # No parallel loading for debugging
