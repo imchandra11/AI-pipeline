@@ -30,7 +30,7 @@
             </div>
             
             <div class="top-predictions-section">
-                <h3>Top Predictions</h3>
+                <h3>Top 3 Predictions</h3>
                 <div class="top-predictions-grid">
                     {% for pred in prediction.top_predictions %}
                     <div class="top-pred-item {% if loop.index == 1 %}top-pred-item-first{% endif %}">
@@ -44,28 +44,6 @@
                     {% endfor %}
                 </div>
             </div>
-            
-            {% if num_classes > 5 %}
-            <div class="all-probabilities-section">
-                <h3>All {{ num_classes }} Food Classes</h3>
-                <div class="probabilities-container">
-                    {% for class_name, prob in prediction.all_probabilities|dictsort(by='value', reverse=true) %}
-                    <div class="prob-item">
-                        <div class="prob-label">
-                            <span class="class-name-text">{{ class_name }}</span>
-                            <span class="prob-value">{{ "%.2f"|format(prob * 100) }}%</span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" 
-                                 style="width: {{ prob * 100 }}%"
-                                 data-class="{{ class_name }}">
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
     {% endif %}

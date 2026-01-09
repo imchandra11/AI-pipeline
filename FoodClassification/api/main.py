@@ -152,20 +152,19 @@ async def predict_web(
         # Load image
         image_obj = Image.open(io.BytesIO(image_bytes))
         
-        # Get prediction
+        # Get prediction - show top 3 predictions
         num_classes = len(predictor.get_class_names())
-        prediction = predictor.predict(image_obj, top_k=min(5, num_classes))
+        top_k = 3  # Show top 3 predictions
+        prediction = predictor.predict(image_obj, top_k=top_k)
         
-        # Prepare image for display (base64 encoded)
+        # Prepare image for display (base64 encoded) - reopen fresh copy
         import base64
-        image_obj.seek(0) if hasattr(image_obj, 'seek') else None
         buffered = io.BytesIO()
-        # Save in format that can be displayed
-        image_obj = Image.open(io.BytesIO(image_bytes))  # Reopen to reset
+        display_image = Image.open(io.BytesIO(image_bytes))
         # Convert to RGB if needed
-        if image_obj.mode != 'RGB':
-            image_obj = image_obj.convert('RGB')
-        image_obj.save(buffered, format="JPEG")
+        if display_image.mode != 'RGB':
+            display_image = display_image.convert('RGB')
+        display_image.save(buffered, format="JPEG")
         img_base64 = base64.b64encode(buffered.getvalue()).decode()
         
         context = {
@@ -202,9 +201,10 @@ async def predict_api(image: UploadFile = File(...)):
         # Load image
         image_obj = Image.open(io.BytesIO(image_bytes))
         
-        # Get prediction
+        # Get prediction - show top 3 predictions
         num_classes = len(predictor.get_class_names())
-        prediction = predictor.predict(image_obj, top_k=min(5, num_classes))
+        top_k = 3  # Show top 3 predictions
+        prediction = predictor.predict(image_obj, top_k=top_k)
         
         return FoodPrediction(**prediction)
     except HTTPException:

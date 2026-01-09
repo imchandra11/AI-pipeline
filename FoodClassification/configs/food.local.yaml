@@ -1,6 +1,6 @@
 # Local configuration overrides
 trainer:
-  max_epochs: 10  # Quick test
+  max_epochs: 3  # Quick test
   precision: 32   # Use full precision if mixed precision causes issues
   devices: 1      # Use single device
 

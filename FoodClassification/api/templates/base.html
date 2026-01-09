@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Food Classification{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>Food Classification System</h1>
-            <p>Classify food images using AI</p>
+            <h1>🍽️ Food Classification System</h1>
+            <p>AI-Powered Food Recognition & Classification</p>
         </div>
     </header>
     
