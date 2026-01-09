@@ -22,14 +22,14 @@ trainer:
         save_on_train_epoch_end: false
     - class_path: Regression.callbacks.ONNXExportCallback
       init_args:
-        output_dir: "models"
+        output_dir: "GemstonePricePriction/models"
         model_name: "gemstone_price_model"
         input_dim: null  # Will be auto-detected from datamodule
 
   logger:
     class_path: lightning.pytorch.loggers.TensorBoardLogger
     init_args:
-      save_dir: "lightning_logs"
+      save_dir: "GemstonePricePriction/lightning_logs"
       name: "GemstonePriceTraining"
       default_hp_metric: false
 
@@ -40,7 +40,7 @@ trainer:
   accelerator: auto
   devices: auto
   precision: 16-mixed
-  default_root_dir: "lightning_logs/GemstonePriceTraining"
+  default_root_dir: "GemstonePricePriction/lightning_logs/GemstonePriceTraining"
 
 model:
   class_path: Regression.modelmodule.ModelModuleRGS
@@ -49,7 +49,7 @@ model:
     weight_decay: 0.0
     lr_scheduler_factor: 0.5
     lr_scheduler_patience: 5
-    save_dir: "models"
+    save_dir: "GemstonePricePriction/models"
     name: "gemstone_price_model"
     model:
       class_path: Regression.modelfactory.RegressionModel
@@ -93,7 +93,7 @@ data:
       - z
     target_col: "price"
     save_preprocessor: true
-    preprocessor_path: "models/preprocessor.joblib"
+    preprocessor_path: "GemstonePricePriction/models/preprocessor.joblib"
 
 fit:
   ckpt_path: null   # for resume training
