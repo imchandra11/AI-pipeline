@@ -211,7 +211,11 @@ classDiagram
     ImageClassificationModel --> ConvBlock : contains multiple
     ImageClassificationModel --> FCBlock : contains multiple
     
-    note for ImageClassificationModel "Architecture Presets:\n- Simple: 2 conv blocks\n- Medium: 4 conv blocks\n- Deep: 6 conv blocks\n- Custom: User-defined"
+    note for ImageClassificationModel "Architecture Presets:
+- Simple: 2 conv blocks
+- Medium: 4 conv blocks
+- Deep: 6 conv blocks
+- Custom: User-defined"
 ```
 
 ---
