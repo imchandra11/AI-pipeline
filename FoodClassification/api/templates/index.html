@@ -303,7 +303,7 @@ function speakPrediction() {
     stopSpeech();
     
     // Create speech text
-    const speechText = `Hello, the predicted food is ${predictedClass}.`;
+    const speechText = `Hello, the predicted food is ${predictedClass}.I think you like ${predictedClass} very much. Thank you for using our food classification service.`;
     
     // Create speech utterance
     currentUtterance = new SpeechSynthesisUtterance(speechText);
