@@ -27,6 +27,48 @@
                     <span class="class-name">{{ prediction.predicted_class }}</span>
                     <span class="confidence-badge">{{ "%.1f"|format(prediction.confidence * 100) }}%</span>
                 </div>
+                
+                <!-- Speech Controls Section -->
+                <div class="speech-controls">
+                    <div class="speech-buttons">
+                        <button type="button" class="btn-speak" id="speakButton" onclick="speakPrediction()">
+                            <span class="speak-icon">🔊</span>
+                            <span class="speak-text">Speak</span>
+                        </button>
+                        <button type="button" class="btn-stop" id="stopButton" onclick="stopSpeech()" style="display: none;">
+                            <span class="stop-icon">⏹</span>
+                            <span class="stop-text">Stop</span>
+                        </button>
+                    </div>
+                    
+                    <div class="speech-settings" id="speechSettings" style="display: none;">
+                        <div class="setting-group">
+                            <label for="voiceSelect" class="setting-label">Voice:</label>
+                            <select id="voiceSelect" class="setting-select" onchange="updateVoice()">
+                                <option value="">Default</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label for="speedSlider" class="setting-label">
+                                Speed: <span id="speedValue">1.0</span>x
+                            </label>
+                            <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1.0" 
+                                   class="setting-slider" oninput="updateSpeed(this.value)">
+                        </div>
+                        <div class="setting-group">
+                            <label for="pitchSlider" class="setting-label">
+                                Pitch: <span id="pitchValue">1.0</span>
+                            </label>
+                            <input type="range" id="pitchSlider" min="0.5" max="2" step="0.1" value="1.0" 
+                                   class="setting-slider" oninput="updatePitch(this.value)">
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn-toggle-settings" id="toggleSettings" onclick="toggleSpeechSettings()">
+                        <span id="settingsIcon">⚙️</span>
+                        <span id="settingsText">Settings</span>
+                    </button>
+                </div>
             </div>
             
             <div class="top-predictions-section">
@@ -189,6 +231,221 @@ uploadForm.addEventListener('submit', () => {
     btnText.style.display = 'none';
     btnLoader.style.display = 'inline';
 });
+
+// ==================== Text-to-Speech Functionality ====================
+
+// Speech synthesis state
+let currentUtterance = null;
+let speechSettings = {
+    rate: 1.0,
+    pitch: 1.0,
+    volume: 1.0,
+    voice: null
+};
+
+// Initialize voices when page loads
+let availableVoices = [];
+
+function loadVoices() {
+    if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+        populateVoiceSelect();
+        
+        // Some browsers load voices asynchronously
+        window.speechSynthesis.onvoiceschanged = () => {
+            availableVoices = window.speechSynthesis.getVoices();
+            populateVoiceSelect();
+        };
+    }
+}
+
+function populateVoiceSelect() {
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect) return;
+    
+    // Clear existing options except "Default"
+    voiceSelect.innerHTML = '<option value="">Default</option>';
+    
+    // Filter English voices
+    const englishVoices = availableVoices.filter(voice => 
+        voice.lang.startsWith('en')
+    );
+    
+    englishVoices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        if (voice.default) {
+            option.textContent += ' [Default]';
+        }
+        voiceSelect.appendChild(option);
+    });
+}
+
+function speakPrediction() {
+    // Get predicted class from DOM (more robust than template variable)
+    const classNameElement = document.querySelector('.class-name');
+    const predictedClass = classNameElement ? classNameElement.textContent.trim() : '';
+    
+    if (!predictedClass) {
+        console.error('No prediction to speak');
+        showNotification('No prediction available to speak', 'error');
+        return;
+    }
+    
+    // Check browser support
+    if (!('speechSynthesis' in window)) {
+        showNotification('Your browser does not support text-to-speech. Please use Chrome, Firefox, Safari, or Edge.', 'error');
+        return;
+    }
+    
+    // Stop any ongoing speech
+    stopSpeech();
+    
+    // Create speech text
+    const speechText = `Hello, the predicted food is ${predictedClass}.`;
+    
+    // Create speech utterance
+    currentUtterance = new SpeechSynthesisUtterance(speechText);
+    
+    // Apply settings
+    currentUtterance.rate = speechSettings.rate;
+    currentUtterance.pitch = speechSettings.pitch;
+    currentUtterance.volume = speechSettings.volume;
+    currentUtterance.lang = 'en-US';
+    
+    // Set voice if selected
+    if (speechSettings.voice !== null && availableVoices[speechSettings.voice]) {
+        currentUtterance.voice = availableVoices[speechSettings.voice];
+    }
+    
+    // Update UI: Show stop button, hide speak button
+    const speakBtn = document.getElementById('speakButton');
+    const stopBtn = document.getElementById('stopButton');
+    if (speakBtn) speakBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'inline-flex';
+    
+    // Event handlers
+    currentUtterance.onstart = () => {
+        if (speakBtn) speakBtn.classList.add('speaking');
+    };
+    
+    currentUtterance.onend = () => {
+        if (speakBtn) {
+            speakBtn.style.display = 'inline-flex';
+            speakBtn.classList.remove('speaking');
+        }
+        if (stopBtn) stopBtn.style.display = 'none';
+        currentUtterance = null;
+    };
+    
+    currentUtterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event.error);
+        if (speakBtn) {
+            speakBtn.style.display = 'inline-flex';
+            speakBtn.classList.remove('speaking');
+        }
+        if (stopBtn) stopBtn.style.display = 'none';
+        currentUtterance = null;
+        showNotification('Speech playback failed. Please try again.', 'error');
+    };
+    
+    // Speak
+    window.speechSynthesis.speak(currentUtterance);
+}
+
+function stopSpeech() {
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+    
+    const speakBtn = document.getElementById('speakButton');
+    const stopBtn = document.getElementById('stopButton');
+    
+    if (speakBtn) {
+        speakBtn.style.display = 'inline-flex';
+        speakBtn.classList.remove('speaking');
+    }
+    if (stopBtn) stopBtn.style.display = 'none';
+    
+    currentUtterance = null;
+}
+
+function updateVoice() {
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (voiceSelect && voiceSelect.value !== '') {
+        speechSettings.voice = parseInt(voiceSelect.value);
+    } else {
+        speechSettings.voice = null;
+    }
+}
+
+function updateSpeed(value) {
+    speechSettings.rate = parseFloat(value);
+    const speedValue = document.getElementById('speedValue');
+    if (speedValue) speedValue.textContent = value;
+}
+
+function updatePitch(value) {
+    speechSettings.pitch = parseFloat(value);
+    const pitchValue = document.getElementById('pitchValue');
+    if (pitchValue) pitchValue.textContent = value;
+}
+
+function toggleSpeechSettings() {
+    const settings = document.getElementById('speechSettings');
+    const toggleBtn = document.getElementById('toggleSettings');
+    const settingsIcon = document.getElementById('settingsIcon');
+    const settingsText = document.getElementById('settingsText');
+    
+    if (settings && toggleBtn) {
+        if (settings.style.display === 'none') {
+            settings.style.display = 'flex';
+            if (settingsIcon) settingsIcon.textContent = '🔽';
+            if (settingsText) settingsText.textContent = 'Hide Settings';
+            toggleBtn.classList.add('active');
+        } else {
+            settings.style.display = 'none';
+            if (settingsIcon) settingsIcon.textContent = '⚙️';
+            if (settingsText) settingsText.textContent = 'Settings';
+            toggleBtn.classList.remove('active');
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Simple notification system (can be enhanced with a toast library)
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        background: ${type === 'error' ? '#fee' : '#e6f3ff'};
+        color: ${type === 'error' ? '#c53030' : '#2c5282'};
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+        font-weight: 500;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Initialize voices when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadVoices);
+} else {
+    loadVoices();
+}
 </script>
 {% endblock %}
 
