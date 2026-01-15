@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Disclaimer Modal -->
+<div id="disclaimerModal" class="disclaimer-overlay">
+    <div class="disclaimer-modal">
+        <div class="disclaimer-header">
+            <div class="warning-icon-wrapper">
+                <span class="warning-icon">⚠️</span>
+            </div>
+            <h2 class="disclaimer-title">Important Legal Disclaimer</h2>
+        </div>
+        
+        <div class="disclaimer-content">
+            <div class="disclaimer-message">
+                <p class="disclaimer-main-text">
+                    <strong class="highlight">Dowry is Illegal in India</strong>
+                </p>
+                <p>
+                    This application is created <strong>solely for educational and awareness purposes</strong>. 
+                    It is designed to demonstrate how societal biases can influence perceptions, not to validate 
+                    or promote such practices.
+                </p>
+                <p>
+                    Dowry is prohibited under the <strong>Dowry Prohibition Act, 1961</strong> and is a 
+                    punishable offense. Engaging in dowry practices can result in severe legal penalties, 
+                    including imprisonment and fines.
+                </p>
+                <p>
+                    This model simulates societal bias and must <strong>NOT</strong> be used to justify, 
+                    promote, or engage in dowry practices in any form.
+                </p>
+            </div>
+            
+            <div class="disclaimer-notice">
+                <div class="notice-icon">💡</div>
+                <p>
+                    By clicking "I Understand & Proceed", you acknowledge that you understand this is 
+                    for awareness purposes only and agree to use this tool responsibly.
+                </p>
+            </div>
+        </div>
+        
+        <div class="disclaimer-footer">
+            <button type="button" class="disclaimer-button" id="acceptDisclaimer" onclick="acceptDisclaimer()">
+                <span>I Understand & Proceed</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-wrapper" id="mainContent">
+    <!-- Error Alert -->
+    {% if error %}
+    <div class="alert-box error-alert">
+        <div class="alert-icon">❌</div>
+        <div class="alert-content">
+            <strong>Error</strong>
+            <p>{{ error }}</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Prediction Result -->
+    {% if prediction %}
+    <div class="result-section">
+        <div class="result-card">
+            <div class="result-header">
+                <h2 class="result-title">Prediction Result</h2>
+            </div>
+            
+            <div class="result-body">
+                <div class="amount-display">
+                    <div class="amount-label">Estimated Dowry Amount</div>
+                    <div class="amount-value">{{ prediction.formatted_amount }}</div>
+                    <div class="amount-detail">₹{{ "%.2f"|format(prediction.dowry_amount_rupees) }} Rupees</div>
+                </div>
+                
+                <div class="meme-display">
+                    <img src="{{ url_for('static', path='/images/meme.jpg') }}" 
+                         alt="Dowry Awareness Meme" 
+                         class="meme-image">
+                    <p class="meme-caption">💰 Remember: Dowry is illegal and unethical!</p>
+                </div>
+                
+                <div class="legal-notice-box">
+                    <div class="notice-icon">⚠️</div>
+                    <p>
+                        <strong>Legal Notice:</strong> This is a simulated calculation for awareness purposes only. 
+                        Dowry is illegal under the Dowry Prohibition Act, 1961. Engaging in dowry practices can 
+                        result in legal penalties including imprisonment and fines.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Form Section -->
+    <div class="form-section">
+        <div class="form-card">
+            <div class="form-header">
+                <h2 class="form-title">Enter Details</h2>
+                <p class="form-subtitle">Fill in the information below to get a prediction</p>
+            </div>
+            
+            <form method="POST" action="/predict" class="prediction-form" id="predictionForm">
+                <!-- Row 1: Age and Salary -->
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="age" class="field-label">
+                            <span class="label-icon">👤</span>
+                            <span class="label-text">Age</span>
+                        </label>
+                        <input type="number" 
+                               id="age" 
+                               name="age" 
+                               class="form-input" 
+                               min="18" 
+                               max="100" 
+                               required 
+                               value="{{ input_data.age if input_data else '' }}"
+                               placeholder="Enter your age">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="monthly_salary" class="field-label">
+                            <span class="label-icon">💰</span>
+                            <span class="label-text">Monthly Salary (INR)</span>
+                        </label>
+                        <input type="number" 
+                               id="monthly_salary" 
+                               name="monthly_salary" 
+                               class="form-input" 
+                               min="0" 
+                               required 
+                               value="{{ input_data.monthly_salary if input_data else '' }}"
+                               placeholder="Enter monthly salary">
+                    </div>
+                </div>
+                
+                <!-- Row 2: Profession and Education -->
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="profession" class="field-label">
+                            <span class="label-icon">💼</span>
+                            <span class="label-text">Profession</span>
+                        </label>
+                        <select id="profession" name="profession" class="form-select" required>
+                            <option value="">Select Profession</option>
+                            {% for option in profession_options %}
+                            <option value="{{ option }}" 
+                                    {% if input_data and input_data.profession == option %}selected{% endif %}>
+                                {{ option }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="education_level" class="field-label">
+                            <span class="label-icon">🎓</span>
+                            <span class="label-text">Education Level</span>
+                        </label>
+                        <select id="education_level" name="education_level" class="form-select" required>
+                            <option value="">Select Education</option>
+                            {% for option in education_options %}
+                            <option value="{{ option }}" 
+                                    {% if input_data and input_data.education_level == option %}selected{% endif %}>
+                                {{ option }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Row 3: Location and Home Status -->
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="location" class="field-label">
+                            <span class="label-icon">📍</span>
+                            <span class="label-text">Location</span>
+                        </label>
+                        <select id="location" name="location" class="form-select" required>
+                            <option value="">Select Location</option>
+                            {% for option in location_options %}
+                            <option value="{{ option }}" 
+                                    {% if input_data and input_data.location == option %}selected{% endif %}>
+                                {{ option }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="field-label">
+                            <span class="label-icon">🏠</span>
+                            <span class="label-text">Home Status</span>
+                        </label>
+                        <div class="radio-group">
+                            {% for option in home_status_options %}
+                            <label class="radio-item">
+                                <input type="radio" 
+                                       name="home_status" 
+                                       value="{{ option }}" 
+                                       required
+                                       {% if input_data and input_data.home_status == option %}checked{% endif %}>
+                                <span class="radio-custom"></span>
+                                <span class="radio-text">{{ option }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Row 4: Family Wealth and Marital Status -->
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="field-label">
+                            <span class="label-icon">💎</span>
+                            <span class="label-text">Family Wealth</span>
+                        </label>
+                        <div class="radio-group">
+                            {% for option in family_wealth_options %}
+                            <label class="radio-item">
+                                <input type="radio" 
+                                       name="family_wealth" 
+                                       value="{{ option }}" 
+                                       required
+                                       {% if input_data and input_data.family_wealth == option %}checked{% endif %}>
+                                <span class="radio-custom"></span>
+                                <span class="radio-text">{{ option }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="field-label">
+                            <span class="label-icon">💑</span>
+                            <span class="label-text">Marital Status</span>
+                        </label>
+                        <div class="radio-group">
+                            {% for option in marital_status_options %}
+                            <label class="radio-item">
+                                <input type="radio" 
+                                       name="marital_status" 
+                                       value="{{ option }}" 
+                                       required
+                                       {% if input_data and input_data.marital_status == option %}checked{% endif %}>
+                                <span class="radio-custom"></span>
+                                <span class="radio-text">{{ option }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Row 5: Marriage Type and Government Job -->
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="field-label">
+                            <span class="label-icon">💒</span>
+                            <span class="label-text">Marriage Type</span>
+                        </label>
+                        <div class="radio-group">
+                            {% for option in marriage_type_options %}
+                            <label class="radio-item">
+                                <input type="radio" 
+                                       name="marriage_type" 
+                                       value="{{ option }}" 
+                                       required
+                                       {% if input_data and input_data.marriage_type == option %}checked{% endif %}>
+                                <span class="radio-custom"></span>
+                                <span class="radio-text">{{ option }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="field-label">
+                            <span class="label-icon">🏛️</span>
+                            <span class="label-text">Government Job</span>
+                        </label>
+                        <div class="toggle-wrapper">
+                            <input type="hidden" 
+                                   id="government_job_hidden" 
+                                   name="government_job" 
+                                   value="{% if input_data %}{{ input_data.government_job }}{% else %}0{% endif %}">
+                            <button type="button" 
+                                    class="toggle-switch" 
+                                    id="government_job_toggle" 
+                                    onclick="toggleGovernmentJob()"
+                                    aria-label="Toggle Government Job">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">No</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-icon">📊</span>
+                        <span>Calculate</span>
+                    </button>
+                    <button type="reset" class="btn-secondary">
+                        <span class="btn-icon">↻</span>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+    'use strict';
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('disclaimerModal');
+        const mainContent = document.getElementById('mainContent');
+        const disclaimerAccepted = sessionStorage.getItem('disclaimerAccepted') === 'true';
+        
+        if (disclaimerAccepted) {
+            // Show main content, hide modal
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+            }
+            if (mainContent) {
+                mainContent.style.display = 'block';
+                mainContent.classList.add('visible');
+            }
+            initializeForm();
+            
+            // Scroll to results if prediction exists
+            {% if prediction %}
+            setTimeout(function() {
+                const resultSection = document.querySelector('.result-section');
+                if (resultSection) {
+                    resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
+            {% endif %}
+        } else {
+            // Show modal, hide main content
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+            }
+            if (mainContent) {
+                mainContent.style.display = 'none';
+                mainContent.classList.remove('visible');
+            }
+        }
+    });
+    
+    // Accept disclaimer function
+    window.acceptDisclaimer = function() {
+        const modal = document.getElementById('disclaimerModal');
+        const mainContent = document.getElementById('mainContent');
+        
+        if (modal) {
+            modal.classList.remove('show');
+            modal.classList.add('hide');
+            setTimeout(function() {
+                modal.style.display = 'none';
+            }, 300);
+        }
+        
+        if (mainContent) {
+            mainContent.style.display = 'block';
+            setTimeout(function() {
+                mainContent.classList.add('visible');
+            }, 50);
+        }
+        
+        sessionStorage.setItem('disclaimerAccepted', 'true');
+        initializeForm();
+    };
+    
+    // Initialize form components
+    function initializeForm() {
+        const hiddenInput = document.getElementById('government_job_hidden');
+        const toggleButton = document.getElementById('government_job_toggle');
+        
+        if (hiddenInput && toggleButton) {
+            const value = hiddenInput.value === '1' || hiddenInput.value === 1;
+            if (value) {
+                toggleButton.classList.add('active');
+                const toggleLabel = toggleButton.querySelector('.toggle-label');
+                if (toggleLabel) toggleLabel.textContent = 'Yes';
+            } else {
+                toggleButton.classList.remove('active');
+                const toggleLabel = toggleButton.querySelector('.toggle-label');
+                if (toggleLabel) toggleLabel.textContent = 'No';
+            }
+        }
+    }
+    
+    // Toggle government job function
+    window.toggleGovernmentJob = function() {
+        const hiddenInput = document.getElementById('government_job_hidden');
+        const toggleButton = document.getElementById('government_job_toggle');
+        const toggleLabel = toggleButton.querySelector('.toggle-label');
+        
+        if (!hiddenInput || !toggleButton) return;
+        
+        const isActive = toggleButton.classList.contains('active');
+        
+        if (isActive) {
+            toggleButton.classList.remove('active');
+            hiddenInput.value = '0';
+            if (toggleLabel) toggleLabel.textContent = 'No';
+        } else {
+            toggleButton.classList.add('active');
+            hiddenInput.value = '1';
+            if (toggleLabel) toggleLabel.textContent = 'Yes';
+        }
+    };
+})();
+</script>
+{% endblock %}
