@@ -1,4 +1,4 @@
-# Gemstone Price Prediction Model Configuration
+# Stress Level Prediction Model Configuration
 # lightning.pytorch==2.1.0
 seed_everything: true
 
@@ -20,41 +20,42 @@ trainer:
         save_top_k: 1
         verbose: true
         save_on_train_epoch_end: false
-    - class_path: Regression.callbacks.ONNXExportCallback
+    - class_path: Classification.callbacks.ONNXExportCallback
       init_args:
-        output_dir: "DowryCalculator/models"
-        model_name: "dowry_model"
-        input_dim: null  # Will be auto-detected from datamodule
+        output_dir: "UpiFraudClassification/models"  # change once
+        model_name: "upi_fraud_model"   # change once
+        input_dim: null  # Will be auto-detected
 
   logger:
     class_path: lightning.pytorch.loggers.TensorBoardLogger
     init_args:
-      save_dir: "DowryCalculator/lightning_logs"
-      name: "DowryTraining"
+      save_dir: "UpiFraudClassification/logs" # change once
+      name: "UpiFraudTraining"        # change once
       default_hp_metric: false
 
-  max_epochs: 100
+  max_epochs: 5
   num_sanity_val_steps: 1
   check_val_every_n_epoch: 1
-  log_every_n_steps: 1
+  log_every_n_steps: 10
   accelerator: auto
   devices: auto
   precision: 16-mixed
-  default_root_dir: "DowryCalculator/lightning_logs/DowryTraining"
+  default_root_dir: "UpiFraudClassification/logs/StressLevelTraining" # change once
 
 model:
-  class_path: Regression.modelmodule.ModelModuleRGS
+  class_path: Classification.modelmodule.ModelModuleCLS
   init_args:
     lr: 0.0001
     weight_decay: 0.0
     lr_scheduler_factor: 0.5
     lr_scheduler_patience: 5
-    save_dir: "DowryCalculator/models"
-    name: "dowry_model"
+    save_dir: "UpiFraudClassification/models" # change once
+    name: "upi_fraud_model"  # change once
     model:
-      class_path: Regression.modelfactory.RegressionModel
+      class_path: Classification.modelfactory.ClassificationModel
       init_args:
-        input_dim: 0  # Auto-set from datamodule via CLI linking
+        input_dim: 0  
+        num_classes: 0  
         hidden_layers: [128, 64, 32]
         dropout_rates: [0.15, 0.1, 0.05]
         activation: "relu"
@@ -73,28 +74,29 @@ lr_scheduler:
     total_steps: 1000
 
 data:
-  class_path: Regression.datamodule.DataModuleRGS
+  class_path: Classification.datamodule.DataModuleCLS
   init_args:
-    csv_path: "DowryCalculator/data/dowry_dataset.csv"
+    csv_path: "UpiFraudClassification/data/upi_risk.csv" # change once
     batch_size: 256
     num_workers: 0
     val_split: 0.2
     random_seed: 42
-    categorical_cols:
-      - profession
-      - education_level
-      - location
-      - home_status
-      - family_wealth
-      - marital_status
-      - marriage_type
-    numeric_cols:
-      - age
-      - monthly_salary
-      - government_job
-    target_col: dowry_amount_lakhs
+    categorical_cols:   #chage once
+      - transaction_type
+      - merchant_category
+      - device_type
+      - is_new_payee
+    numeric_cols:        #change once
+      - transaction_amount
+      - hour_of_day
+      - account_age_days
+      - num_txn_last_24h
+      - num_failed_txn_last_24h
+      - distance_from_usual_km
+      
+    target_col: "risk_label"  #change once
     save_preprocessor: true
-    preprocessor_path: "DowryCalculator/models/preprocessor.joblib"
+    preprocessor_path: "UpiFraudClassification/models/preprocessor.joblib"  # change once
 
 fit:
   ckpt_path: null   # for resume training
